@@ -4,27 +4,7 @@ import { Head } from '@inertiajs/react';
 import React, { useState, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import ResultPage from './ResultPage';
-
-// Define the type for the submission data
-interface Submission {
-    id: number;
-    text_input: string;
-    radio_input: string;
-    checkbox_input: string | null;
-    created_at: string;
-    updated_at: string;
-    user_id: number;
-    image_path: string | null; // Add image_path to the interface
-}
-
-// Define the type for the Emoji data from the 3rd party API
-interface EmojiData {
-    name: string;
-    category: string;
-    group: string;
-    htmlCode: string[];
-    unicode: string[];
-}
+import { Submission, EmojiData } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

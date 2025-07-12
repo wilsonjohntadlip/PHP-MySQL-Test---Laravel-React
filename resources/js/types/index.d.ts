@@ -22,6 +22,27 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+// Moved Submission interface here from dashboard.tsx and ResultPage.tsx
+export interface Submission {
+    id: number;
+    text_input: string;
+    radio_input: string;
+    checkbox_input: string | null;
+    created_at: string;
+    updated_at: string;
+    user_id: number;
+    image_path: string | null;
+}
+
+// Moved EmojiData interface here from dashboard.tsx and ResultPage.tsx
+export interface EmojiData {
+    name: string;
+    category: string;
+    group: string;
+    htmlCode: string[];
+    unicode: string[];
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
