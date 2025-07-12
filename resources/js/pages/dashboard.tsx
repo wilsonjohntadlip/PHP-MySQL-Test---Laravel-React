@@ -42,7 +42,7 @@ export default function Dashboard() {
         e.preventDefault();
 
         // Client-side validation
-        let newErrors = {
+        const newErrors = {
             text_input: '',
             radio_input: '',
             checkbox_input: '',
