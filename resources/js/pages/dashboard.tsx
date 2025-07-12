@@ -1,22 +1,10 @@
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import React, { useState, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import ResultPage from './ResultPage';
-
-// Define the type for the submission data
-interface Submission {
-    id: number;
-    text_input: string;
-    radio_input: string;
-    checkbox_input: string | null;
-    created_at: string;
-    updated_at: string;
-    user_id: number;
-    image_path: string | null; // Add image_path to the interface
-}
+import { Submission, EmojiData } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -51,13 +39,15 @@ export default function Dashboard() {
     const [currentView, setCurrentView] = useState<'form' | 'results'>('form');
     // State to store the fetched submission data for ResultPage
     const [fetchedSubmission, setFetchedSubmission] = useState<Submission | null>(null);
+    // New state to store fetched emoji data <--- THIS LINE IS CRUCIAL
+    const [fetchedEmojiData, setFetchedEmojiData] = useState<EmojiData | null>(null);
 
     // Handles form submission
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Client-side validation
-        let newErrors = {
+        const newErrors = {
             text_input: '',
             radio_input: '',
             checkbox_input: '',
@@ -81,7 +71,7 @@ export default function Dashboard() {
         }
 
         // Image file validation (optional, but good practice if required)
-        // For now, let's make it optional as per the screenshot, but if you want to make it required, uncomment below:
+        // if image file will be required, uncomment below:
         // if (!imageFile) {
         //     newErrors.image_file = 'Please select an image file.';
         //     isValid = false;
@@ -150,21 +140,41 @@ export default function Dashboard() {
         setShowLoadingModal(true);
 
         try {
-            // Ensure this route correctly returns the latest submission including image_path
-            const response = await fetch(route('view.database'));
-            const data = await response.json();
+            // Fetch latest submission data
+            console.log('Fetching latest submission data...');
+            const submissionResponse = await fetch(route('view.database'));
+            const submissionData = await submissionResponse.json();
+            console.log('Submission data response:', submissionData);
 
-            if (response.ok && data.latestSubmission) {
-                setFetchedSubmission(data.latestSubmission);
-                setCurrentView('results');
+            // Fetch random emoji data
+            console.log('Fetching random emoji data from:', route('fetch.random.emoji'));
+            const emojiResponse = await fetch(route('fetch.random.emoji'));
+            const emojiData = await emojiResponse.json();
+            console.log('Emoji data response:', emojiData);
+
+
+            if (submissionResponse.ok && submissionData.latestSubmission) {
+                setFetchedSubmission(submissionData.latestSubmission);
             } else {
-                alert('No submissions found or an error occurred.');
                 setFetchedSubmission(null);
-                setCurrentView('form');
+                alert('No submissions found or an error occurred with latest submission fetch.');
             }
+
+            if (emojiResponse.ok && emojiData) {
+                setFetchedEmojiData(emojiData);
+            } else {
+                setFetchedEmojiData(null);
+                alert('No emoji data found or an error occurred with emoji fetch.');
+            }
+
+            setCurrentView('results');
+
         } catch (error) {
             console.error('Fetching data failed:', error);
             alert('A network error occurred while fetching data.');
+            setFetchedSubmission(null);
+            setFetchedEmojiData(null);
+            setCurrentView('form');
         } finally {
             setIsLoading(false);
             setShowLoadingModal(false);
@@ -175,6 +185,7 @@ export default function Dashboard() {
     const handleBackToForm = () => {
         setCurrentView('form');
         setFetchedSubmission(null);
+        setFetchedEmojiData(null);
     };
 
     return (
@@ -314,8 +325,12 @@ export default function Dashboard() {
                         </form>
                     </div>
                 ) : (
-                    // Render ResultPage and pass fetched data and the back-to-form callback
-                    <ResultPage latestSubmission={fetchedSubmission} onBackToForm={handleBackToForm} />
+                    // Render ResultPage and pass fetched data and the back-to-form callback, including emoji data
+                    <ResultPage
+                        latestSubmission={fetchedSubmission}
+                        onBackToForm={handleBackToForm}
+                        randomEmojiData={fetchedEmojiData}
+                    />
                 )}
             </div>
 

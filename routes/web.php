@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/form-submit', [FormSubmissionController::class, 'store']);
     Route::get('/view-database', [FormSubmissionController::class, 'showLatest'])->name('view.database');
+    Route::get('/fetch-random-emoji', [FormSubmissionController::class, 'fetchRandomEmoji'])->name('fetch.random.emoji');
 
 });
 
