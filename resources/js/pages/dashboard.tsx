@@ -1,9 +1,21 @@
+import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react'; // Ensure 'router' is imported here
-import React, { useState, Fragment } from 'react'; // Ensure 'Fragment' is imported
-import { Dialog, Transition } from '@headlessui/react'; // Headless UI imports
-import ResultPage from './ResultPage'; // Import the ResultPage component
+import { Head } from '@inertiajs/react'; // Removed 'router'
+import React, { useState, Fragment } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import ResultPage from './ResultPage';
+
+// Define the type for the submission data (copied from ResultPage.tsx)
+interface Submission {
+    id: number; // Assuming an 'id' is present after saving to DB
+    text_input: string;
+    radio_input: string;
+    checkbox_input: string | null;
+    created_at: string;
+    updated_at: string; // Assuming 'updated_at' is present
+    user_id: number; // Assuming 'user_id' is present
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -34,8 +46,8 @@ export default function Dashboard() {
 
     // State to manage the current view (form or results)
     const [currentView, setCurrentView] = useState<'form' | 'results'>('form');
-    // State to store the fetched submission data for ResultPage
-    const [fetchedSubmission, setFetchedSubmission] = useState<any | null>(null); // Use 'any' for now, or define a specific interface if needed
+    // State to store the fetched submission data for ResultPage - now typed with Submission
+    const [fetchedSubmission, setFetchedSubmission] = useState<Submission | null>(null);
 
     // Handles form submission
     const handleSubmit = async (e: React.FormEvent) => {
