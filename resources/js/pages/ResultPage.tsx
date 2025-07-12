@@ -1,23 +1,15 @@
 import { Head } from '@inertiajs/react';
 import React from 'react';
+import { Submission, EmojiData } from '@/types'; // <--- NEW: Import Submission and EmojiData
 
-// Define the type for the submission data
-interface Submission {
-    id: number;
-    text_input: string;
-    radio_input: string;
-    checkbox_input: string | null;
-    created_at: string;
-    updated_at: string;
-    user_id: number;
-    image_path: string | null; // Added image_path to the interface
-}
+// REMOVED: interface Submission { ... }
+// REMOVED: interface EmojiData { ... }
 
-// Define the props for ResultPage, including the new onBackToForm callback
+// Define the props for ResultPage, including the new onBackToForm callback and randomEmojiData
 interface ResultPageProps {
     latestSubmission: Submission | null;
-    onBackToForm: () => void; // This is the callback from the parent
-    randomEmojiData: any; // Added randomEmojiData to the interface
+    onBackToForm: () => void;
+    randomEmojiData: EmojiData | null;
 }
 
 export default function ResultPage({ latestSubmission, onBackToForm, randomEmojiData }: ResultPageProps) {
