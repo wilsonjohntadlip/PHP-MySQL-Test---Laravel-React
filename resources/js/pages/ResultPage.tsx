@@ -1,6 +1,5 @@
 import { Head } from '@inertiajs/react';
 import React from 'react';
-import { Button } from '@/components/ui/button';
 
 // Define the type for the submission data
 interface Submission {

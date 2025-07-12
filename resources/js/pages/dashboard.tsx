@@ -1,4 +1,3 @@
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
@@ -68,7 +67,7 @@ export default function Dashboard() {
         e.preventDefault();
 
         // Client-side validation
-        let newErrors = {
+        const newErrors = {
             text_input: '',
             radio_input: '',
             checkbox_input: '',
