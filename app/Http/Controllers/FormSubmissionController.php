@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Dbuser1Submission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-// Remove: use Inertia\Inertia; // No longer needed for showLatest
+use Illuminate\Support\Facades\Storage;
 
 
 class FormSubmissionController extends Controller
@@ -17,9 +17,22 @@ class FormSubmissionController extends Controller
             'text_input' => 'required|string|max:100',
             'radio_input' => 'required|string',
             'checkbox_input' => 'nullable|string',
+            'image_file' => 'nullable|image|mimes:jpeg,png,gif|max:2048',
         ]);
 
+        $imagePath = null;
+        if ($request->hasFile('image_file')) {
+            // Store the image in the 'images' directory on the 'public' disk
+            // This will create a file in storage/app/public/images
+            $imagePath = $request->file('image_file')->store('images', 'public'); // <--- CHANGED THIS LINE
+
+            // Get the public URL for the stored image
+            // This path will be stored in the database
+            $imagePath = Storage::url($imagePath);
+        }
+
         $validated['user_id'] = $request->user()->id;
+        $validated['image_path'] = $imagePath; // Add the image path to validated data
 
         Dbuser1Submission::create($validated);
 

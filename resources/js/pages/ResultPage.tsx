@@ -1,4 +1,6 @@
-import { Head } from '@inertiajs/react'; // Only Head is typically needed here now
+import { Head } from '@inertiajs/react';
+import React from 'react';
+import { Button } from '@/components/ui/button';
 
 // Define the type for the submission data
 interface Submission {
@@ -9,6 +11,7 @@ interface Submission {
     created_at: string;
     updated_at: string;
     user_id: number;
+    image_path: string | null; // Added image_path to the interface
 }
 
 // Define the props for ResultPage, including the new onBackToForm callback
@@ -28,16 +31,26 @@ export default function ResultPage({ latestSubmission, onBackToForm }: ResultPag
     const worldText = latestSubmission?.checkbox_input || 'World!'; // Default to 'World!' if checkbox is null
 
     return (
-        <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border flex flex-col items-center justify-center p-4">
+        <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border flex flex-col items-center justify-center">
             <Head title="Database View" />
 
-            <div className="bg-green-500 text-white p-4 rounded-lg shadow-md mb-[100px] w-full max-w-lg text-center">
+            {/* Top Green Box - Adjusted margin to move it significantly up and added more bottom margin */}
+            <div className="bg-green-500 text-white p-4 rounded-lg shadow-md mb-8 w-full max-w-lg text-center">
                 {latestSubmission ? latestSubmission.text_input : 'No Text Input Available'}
             </div>
-            
-            <h1 className="text-3xl font-semibold mb-4">{helloText} {worldText}</h1>
+            <h1 className="text-3xl font-semibold mb-8 mt-4">{helloText} {worldText}</h1>
 
-            <div className="mt-16">
+            {latestSubmission?.image_path && (
+                <div className="mb-12 w-full max-w-lg flex justify-center">
+                    <img
+                        src={latestSubmission.image_path}
+                        alt="Uploaded"
+                        className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+                    />
+                </div>
+            )}
+
+            <div className="mt-8"> {/* Adjusted mt-8 */}
                 <button
                     onClick={handleBackToForm}
                     className="px-6 py-2 border border-gray-500 rounded bg-gray-200 hover:bg-gray-300 text-lg"

@@ -1,20 +1,21 @@
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react'; // Removed 'router'
+import { Head } from '@inertiajs/react';
 import React, { useState, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import ResultPage from './ResultPage';
 
-// Define the type for the submission data (copied from ResultPage.tsx)
+// Define the type for the submission data
 interface Submission {
-    id: number; // Assuming an 'id' is present after saving to DB
+    id: number;
     text_input: string;
     radio_input: string;
     checkbox_input: string | null;
     created_at: string;
-    updated_at: string; // Assuming 'updated_at' is present
-    user_id: number; // Assuming 'user_id' is present
+    updated_at: string;
+    user_id: number;
+    image_path: string | null; // Add image_path to the interface
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -29,12 +30,14 @@ export default function Dashboard() {
     const [checkedBox, setCheckedBox] = useState<string | null>(null);
     const [textInput, setTextInput] = useState('');
     const [radioInput, setRadioInput] = useState('');
+    const [imageFile, setImageFile] = useState<File | null>(null); // New state for image file
 
     // State for validation errors
     const [errors, setErrors] = useState({
         text_input: '',
         radio_input: '',
         checkbox_input: '',
+        image_file: '', // New error state for image
     });
 
     // State for the success modal
@@ -42,11 +45,11 @@ export default function Dashboard() {
 
     // State for the loading modal and button disablement
     const [showLoadingModal, setShowLoadingModal] = useState(false);
-    const [isLoading, setIsLoading] = useState(false); // For button disabled state
+    const [isLoading, setIsLoading] = useState(false);
 
     // State to manage the current view (form or results)
     const [currentView, setCurrentView] = useState<'form' | 'results'>('form');
-    // State to store the fetched submission data for ResultPage - now typed with Submission
+    // State to store the fetched submission data for ResultPage
     const [fetchedSubmission, setFetchedSubmission] = useState<Submission | null>(null);
 
     // Handles form submission
@@ -54,10 +57,11 @@ export default function Dashboard() {
         e.preventDefault();
 
         // Client-side validation
-        const newErrors = {
+        let newErrors = {
             text_input: '',
             radio_input: '',
             checkbox_input: '',
+            image_file: '',
         };
         let isValid = true;
 
@@ -71,36 +75,47 @@ export default function Dashboard() {
             isValid = false;
         }
 
-        // For checkbox, require at least one to be checked
         if (checkedBox === null) {
             newErrors.checkbox_input = 'Please select a checkbox option.';
             isValid = false;
         }
 
+        // Image file validation (optional, but good practice if required)
+        // For now, let's make it optional as per the screenshot, but if you want to make it required, uncomment below:
+        // if (!imageFile) {
+        //     newErrors.image_file = 'Please select an image file.';
+        //     isValid = false;
+        // }
+
+
         setErrors(newErrors);
 
         if (!isValid) {
-            return; // Stop submission if validation fails
+            return;
         }
 
         setIsLoading(true);
         setShowLoadingModal(true);
 
-        const data = {
-            text_input: textInput,
-            radio_input: radioInput,
-            checkbox_input: checkedBox,
-        };
+        const formData = new FormData(); // Use FormData for file uploads
+        formData.append('text_input', textInput);
+        formData.append('radio_input', radioInput);
+        if (checkedBox) { // Only append if checkedBox is not null
+            formData.append('checkbox_input', checkedBox);
+        }
+        if (imageFile) {
+            formData.append('image_file', imageFile); // Append the image file
+        }
 
         try {
             const response = await fetch('/form-submit', {
                 method: 'POST',
+                // No 'Content-Type': 'application/json' when using FormData
                 headers: {
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 },
-                body: JSON.stringify(data),
+                body: formData, // Send FormData
             });
 
             if (response.ok) {
@@ -109,10 +124,12 @@ export default function Dashboard() {
                 setTextInput('');
                 setRadioInput('');
                 setCheckedBox(null);
-                setErrors({ // Clear errors after successful submission
+                setImageFile(null); // Clear image file state
+                setErrors({
                     text_input: '',
                     radio_input: '',
                     checkbox_input: '',
+                    image_file: '',
                 });
             } else {
                 const errorData = await response.json();
@@ -129,34 +146,35 @@ export default function Dashboard() {
 
     // Handles "View Database" button click
     const handleViewDatabase = async () => {
-        setIsLoading(true);      // Disable buttons immediately
-        setShowLoadingModal(true); // Show loading modal
+        setIsLoading(true);
+        setShowLoadingModal(true);
 
         try {
+            // Ensure this route correctly returns the latest submission including image_path
             const response = await fetch(route('view.database'));
             const data = await response.json();
 
             if (response.ok && data.latestSubmission) {
                 setFetchedSubmission(data.latestSubmission);
-                setCurrentView('results'); // Switch to results view
+                setCurrentView('results');
             } else {
                 alert('No submissions found or an error occurred.');
                 setFetchedSubmission(null);
-                setCurrentView('form'); // Stay on form if no data
+                setCurrentView('form');
             }
         } catch (error) {
             console.error('Fetching data failed:', error);
             alert('A network error occurred while fetching data.');
         } finally {
-            setIsLoading(false);      // Re-enable buttons
-            setShowLoadingModal(false); // Hide loading modal
+            setIsLoading(false);
+            setShowLoadingModal(false);
         }
     };
 
     // Callback function passed to ResultPage to switch back to form view
     const handleBackToForm = () => {
-        setCurrentView('form'); // Switch back to form view
-        setFetchedSubmission(null); // Clear fetched data
+        setCurrentView('form');
+        setFetchedSubmission(null);
     };
 
     return (
@@ -179,7 +197,6 @@ export default function Dashboard() {
                                     className="w-full border border-gray-400 rounded px-3 py-2 text-lg"
                                     value={textInput}
                                     onChange={e => setTextInput(e.target.value)}
-                                    // required // Handled by custom validation
                                 />
                                 {errors.text_input && (
                                     <p className="text-red-500 text-sm mt-1">{errors.text_input}</p>
@@ -192,11 +209,10 @@ export default function Dashboard() {
                                         <input
                                             type="radio"
                                             name="greeting"
-                                            value="Hi" // Changed from 'hi' to 'Hi'
+                                            value="Hi"
                                             className="size-5"
-                                            checked={radioInput === 'Hi'} // Changed from 'hi' to 'Hi'
-                                            onChange={() => setRadioInput('Hi')} // Changed from 'hi' to 'Hi'
-                                            // required // Handled by custom validation
+                                            checked={radioInput === 'Hi'}
+                                            onChange={() => setRadioInput('Hi')}
                                         />
                                         Hi
                                     </label>
@@ -204,11 +220,10 @@ export default function Dashboard() {
                                         <input
                                             type="radio"
                                             name="greeting"
-                                            value="Hello" // Changed from 'hello' to 'Hello'
+                                            value="Hello"
                                             className="size-5"
-                                            checked={radioInput === 'Hello'} // Changed from 'hello' to 'Hello'
-                                            onChange={() => setRadioInput('Hello')} // Changed from 'hello' to 'Hello'
-                                            // required // Handled by custom validation
+                                            checked={radioInput === 'Hello'}
+                                            onChange={() => setRadioInput('Hello')}
                                         />
                                         Hello
                                     </label>
@@ -217,7 +232,7 @@ export default function Dashboard() {
                                     <p className="text-red-500 text-sm mt-1">{errors.radio_input}</p>
                                 )}
                             </div>
-                            <div className="mb-14">
+                            <div className="mb-6"> {/* Changed mb-14 to mb-6 for spacing */}
                                 <div className="text-gray-700 mb-2">Check Box</div>
                                 <div className="flex flex-col gap-2 ml-4">
                                     <label className="flex items-center gap-2">
@@ -225,8 +240,8 @@ export default function Dashboard() {
                                             type="checkbox"
                                             name="world"
                                             className="size-5"
-                                            checked={checkedBox === 'World!'} // Changed from 'world' to 'World!'
-                                            onChange={() => setCheckedBox(checkedBox === 'World!' ? null : 'World!')} // Changed from 'world' to 'World!'
+                                            checked={checkedBox === 'World!'}
+                                            onChange={() => setCheckedBox(checkedBox === 'World!' ? null : 'World!')}
                                         />
                                         World!
                                     </label>
@@ -235,8 +250,8 @@ export default function Dashboard() {
                                             type="checkbox"
                                             name="web"
                                             className="size-5"
-                                            checked={checkedBox === 'Web!'} // Changed from 'web' to 'Web!'
-                                            onChange={() => setCheckedBox(checkedBox === 'Web!' ? null : 'Web!')} // Changed from 'web' to 'Web!'
+                                            checked={checkedBox === 'Web!'}
+                                            onChange={() => setCheckedBox(checkedBox === 'Web!' ? null : 'Web!')}
                                         />
                                         Web!
                                     </label>
@@ -245,17 +260,51 @@ export default function Dashboard() {
                                     <p className="text-red-500 text-sm mt-1">{errors.checkbox_input}</p>
                                 )}
                             </div>
+                            {/* New Image Upload Section */}
+                            <div className="mb-14"> {/* Added mb-14 for spacing before buttons */}
+                                <label className="block text-gray-700 mb-2" htmlFor="image_file">
+                                    Attach Image
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        id="image_file"
+                                        name="image_file"
+                                        type="file"
+                                        accept="image/jpeg,image/gif,image/png"
+                                        className="hidden" // Hide default file input
+                                        onChange={e => setImageFile(e.target.files ? e.target.files[0] : null)}
+                                    />
+                                    <input
+                                        type="text"
+                                        className="flex-1 border border-gray-400 rounded px-3 py-2 text-lg cursor-default"
+                                        value={imageFile ? imageFile.name : ''}
+                                        readOnly
+                                        placeholder="No file chosen"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => document.getElementById('image_file')?.click()}
+                                        className="px-4 py-2 border border-gray-500 rounded bg-gray-200 hover:bg-gray-300 cursor-pointer" // Added cursor-pointer
+                                    >
+                                        Browse file
+                                    </button>
+                                </div>
+                                {errors.image_file && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.image_file}</p>
+                                )}
+                            </div>
+
                             <div className="flex gap-6 justify-center">
                                 <button
                                     type="submit"
-                                    className="px-6 py-2 border border-gray-500 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-2 border border-gray-500 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" // Added cursor-pointer
                                     disabled={isLoading}
                                 >
                                     Submit
                                 </button>
                                 <button
                                     type="button"
-                                    className="px-6 py-2 border border-gray-500 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-2 border border-gray-500 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" // Added cursor-pointer
                                     onClick={handleViewDatabase}
                                     disabled={isLoading}
                                 >

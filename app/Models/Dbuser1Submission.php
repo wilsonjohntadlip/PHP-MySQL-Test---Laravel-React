@@ -18,6 +18,7 @@ class Dbuser1Submission extends Model
         'text_input',
         'radio_input',
         'checkbox_input',
+        'image_path'
     ];
 
     /**
